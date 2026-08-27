@@ -1,7 +1,12 @@
 const { userModel } = require("../model/user.model");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { sendOtpEmail } = require("../config/mailer");
 require('dotenv').config();
+
+function generateOtp() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
 
 const registration = async (req, res) => {
     const { fullName, email, password } = req.body;
@@ -20,11 +25,102 @@ const registration = async (req, res) => {
             if (err) {
                 return res.status(500).send({ message: "There was an error creating the account" });
             } else {
-                const user = new userModel({ fullName, email, password: hash });
+                const otp = generateOtp();
+                const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+                const user = new userModel({
+                    fullName,
+                    email,
+                    password: hash,
+                    isVerified: false,
+                    otp,
+                    otpExpiry
+                });
                 await user.save();
-                res.status(200).send({ message: "Registration completed" });
+
+                try {
+                    await sendOtpEmail(email, fullName, otp);
+                } catch (mailError) {
+                    return res.status(500).send({ message: "Account created, but the verification email could not be sent. Try resending the code.", error: mailError.message });
+                }
+
+                res.status(200).send({ message: "Registration successful. Check your email for a verification code.", email });
             }
         });
+    } catch (error) {
+        res.status(500).send({ message: "Internal Server Error", error: error.message });
+    }
+}
+
+const verifyOtp = async (req, res) => {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+        return res.status(400).send({ message: "Email and code are required" });
+    }
+
+    try {
+        const user = await userModel.findOne({ email });
+        if (!user) {
+            return res.status(400).send({ message: "No account found for this email" });
+        }
+
+        if (user.isVerified) {
+            return res.status(400).send({ message: "Account already verified" });
+        }
+
+        if (!user.otp || !user.otpExpiry) {
+            return res.status(400).send({ message: "No verification code on file. Request a new one." });
+        }
+
+        if (user.otpExpiry < new Date()) {
+            return res.status(400).send({ message: "This code has expired. Request a new one." });
+        }
+
+        if (user.otp !== otp) {
+            return res.status(400).send({ message: "Incorrect code" });
+        }
+
+        user.isVerified = true;
+        user.otp = undefined;
+        user.otpExpiry = undefined;
+        await user.save();
+
+        res.status(200).send({ message: "Account verified. You can now log in." });
+    } catch (error) {
+        res.status(500).send({ message: "Internal Server Error", error: error.message });
+    }
+}
+
+const resendOtp = async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).send({ message: "Email is required" });
+    }
+
+    try {
+        const user = await userModel.findOne({ email });
+        if (!user) {
+            return res.status(400).send({ message: "No account found for this email" });
+        }
+
+        if (user.isVerified) {
+            return res.status(400).send({ message: "Account already verified" });
+        }
+
+        const otp = generateOtp();
+        user.otp = otp;
+        user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+        await user.save();
+
+        try {
+            await sendOtpEmail(email, user.fullName, otp);
+        } catch (mailError) {
+            return res.status(500).send({ message: "Could not send the email. Try again in a moment.", error: mailError.message });
+        }
+
+        res.status(200).send({ message: "A new code has been sent to your email." });
     } catch (error) {
         res.status(500).send({ message: "Internal Server Error", error: error.message });
     }
@@ -41,6 +137,10 @@ const userLogin = async (req, res) => {
         const user = await userModel.findOne({ email });
         if (!user) {
             return res.status(400).send({ message: "Invalid email or password" });
+        }
+
+        if (!user.isVerified) {
+            return res.status(403).send({ message: "Please verify your email before logging in.", needsVerification: true, email: user.email });
         }
 
         bcrypt.compare(password, user.password, (err, result) => {
@@ -61,7 +161,7 @@ const userLogin = async (req, res) => {
 
 const getProfile = async (req, res) => {
     try {
-        const user = await userModel.findById(req.headers.userId).select("-password");
+        const user = await userModel.findById(req.headers.userId).select("-password -otp -otpExpiry");
         res.status(200).send(user);
     } catch (error) {
         res.status(500).send({ message: "Internal Server Error", error: error.message });
@@ -70,6 +170,8 @@ const getProfile = async (req, res) => {
 
 module.exports = {
     registration,
+    verifyOtp,
+    resendOtp,
     userLogin,
     getProfile
 }

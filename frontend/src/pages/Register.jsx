@@ -18,7 +18,7 @@ export default function Register() {
     setLoading(true);
     try {
       await api.register({ fullName, email, password });
-      navigate("/login");
+      navigate("/verify-otp", { state: { email } });
     } catch (err) {
       setError(err.message);
     } finally {

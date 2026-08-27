@@ -23,7 +23,9 @@ async function request(path, options = {}) {
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    throw new Error(data.message || "Something went wrong");
+    const error = new Error(data.message || "Something went wrong");
+    error.data = data;
+    throw error;
   }
 
   return data;
@@ -31,6 +33,8 @@ async function request(path, options = {}) {
 
 export const api = {
   register: (body) => request("/auth/register", { method: "POST", body: JSON.stringify(body) }),
+  verifyOtp: (body) => request("/auth/verify-otp", { method: "POST", body: JSON.stringify(body) }),
+  resendOtp: (body) => request("/auth/resend-otp", { method: "POST", body: JSON.stringify(body) }),
   login: (body) => request("/auth/login", { method: "POST", body: JSON.stringify(body) }),
   getProfile: () => request("/auth/profile"),
 

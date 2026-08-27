@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Box, Button, Input, Stack, Heading, Text, Link as ChakraLink } from "@chakra-ui/react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useLocation } from "react-router";
 import { api, saveSession } from "@/api";
 import { colors } from "@/theme";
 
@@ -10,6 +10,8 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const justVerified = location.state?.justVerified;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,6 +22,10 @@ export default function Login() {
       saveSession(data.token, data.fullName);
       navigate("/dashboard");
     } catch (err) {
+      if (err.data?.needsVerification) {
+        navigate("/verify-otp", { state: { email: err.data.email } });
+        return;
+      }
       setError(err.message);
     } finally {
       setLoading(false);
@@ -32,6 +38,9 @@ export default function Login() {
         boxShadow="0 6px 20px rgba(27,42,74,0.06)">
         <Heading className="font-display" mb={1} fontSize="2xl" color={colors.ink}>Welcome back</Heading>
         <Text fontSize="sm" color={colors.inkSoft} mb={6}>Log in to your study desk.</Text>
+        {justVerified && (
+          <Text fontSize="sm" color={colors.forest} mb={4}>Your email is verified — you can log in now.</Text>
+        )}
         <form onSubmit={handleSubmit}>
           <Stack gap={4}>
             <Input placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
