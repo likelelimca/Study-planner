@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Box, Button, Input, Stack, Heading, Text, Link as ChakraLink } from "@chakra-ui/react";
 import { Link, useNavigate } from "react-router";
 import { api } from "@/api";
+import { colors } from "@/theme";
 
 export default function Register() {
   const [fullName, setFullName] = useState("");
@@ -26,20 +27,28 @@ export default function Register() {
   };
 
   return (
-    <Box maxW="400px" mx="auto" mt={20} p={8} borderWidth={1} borderRadius="lg">
-      <Heading mb={6} size="lg" textAlign="center">Create Account</Heading>
-      <form onSubmit={handleSubmit}>
-        <Stack gap={4}>
-          <Input placeholder="Full name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-          <Input placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <Input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          {error && <Text color="red.500" fontSize="sm">{error}</Text>}
-          <Button type="submit" colorPalette="teal" loading={loading}>Register</Button>
-        </Stack>
-      </form>
-      <Text mt={4} textAlign="center" fontSize="sm">
-        Already have an account? <ChakraLink asChild color="teal.600"><Link to="/login">Log in</Link></ChakraLink>
-      </Text>
+    <Box bg={colors.paper} minH="100vh" display="flex" alignItems="center" justifyContent="center" px={4}>
+      <Box maxW="400px" w="100%" bg="white" borderWidth="1px" borderColor={colors.line} borderRadius="4px" p={8}
+        boxShadow="0 6px 20px rgba(27,42,74,0.06)">
+        <Heading className="font-display" mb={1} fontSize="2xl" color={colors.ink}>Set up your desk</Heading>
+        <Text fontSize="sm" color={colors.inkSoft} mb={6}>Create an account to start tracking.</Text>
+        <form onSubmit={handleSubmit}>
+          <Stack gap={4}>
+            <Input placeholder="Full name" value={fullName} onChange={(e) => setFullName(e.target.value)}
+              required borderColor={colors.line} borderRadius="4px" />
+            <Input placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+              required borderColor={colors.line} borderRadius="4px" />
+            <Input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+              required borderColor={colors.line} borderRadius="4px" />
+            {error && <Text color={colors.clay} fontSize="sm">{error}</Text>}
+            <Button type="submit" bg={colors.ink} color={colors.paper} _hover={{ bg: "#233863" }}
+              borderRadius="4px" loading={loading}>Register</Button>
+          </Stack>
+        </form>
+        <Text mt={5} textAlign="center" fontSize="sm" color={colors.inkSoft}>
+          Already have an account? <ChakraLink asChild color={colors.ink} fontWeight="600"><Link to="/login">Log in</Link></ChakraLink>
+        </Text>
+      </Box>
     </Box>
   );
 }

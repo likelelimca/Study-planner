@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { Box, Heading, Input, Button, Stack, HStack, Text, IconButton, Textarea } from "@chakra-ui/react";
 import { LuTrash2, LuPencil } from "react-icons/lu";
 import Navbar from "@/components/Navbar";
+import IndexCard from "@/components/IndexCard";
 import { api } from "@/api";
+import { colors } from "@/theme";
 
 export default function Subjects() {
   const [subjects, setSubjects] = useState([]);
@@ -53,20 +55,24 @@ export default function Subjects() {
   };
 
   return (
-    <Box>
+    <Box bg={colors.paper} minH="100vh">
       <Navbar />
-      <Box p={8} maxW="700px" mx="auto">
-        <Heading mb={6}>Subjects</Heading>
+      <Box p={{ base: 5, md: 8 }} maxW="700px" mx="auto">
+        <Heading className="font-display" mb={7} color={colors.ink}>Subjects</Heading>
 
         <form onSubmit={handleSubmit}>
-          <Stack gap={3} mb={8} p={5} borderWidth={1} borderRadius="lg">
-            <Input placeholder="Subject name" value={name} onChange={(e) => setName(e.target.value)} required />
-            <Textarea placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
-            {error && <Text color="red.500" fontSize="sm">{error}</Text>}
+          <Stack gap={3} mb={10} p={5} bg="white" borderWidth="1px" borderColor={colors.line} borderRadius="4px">
+            <Input placeholder="Subject name" value={name} onChange={(e) => setName(e.target.value)} required
+              borderColor={colors.line} borderRadius="4px" />
+            <Textarea placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)}
+              borderColor={colors.line} borderRadius="4px" />
+            {error && <Text color={colors.clay} fontSize="sm">{error}</Text>}
             <HStack>
-              <Button type="submit" colorPalette="teal">{editingId ? "Update Subject" : "Add Subject"}</Button>
+              <Button type="submit" bg={colors.ink} color={colors.paper} _hover={{ bg: "#233863" }} borderRadius="4px">
+                {editingId ? "Update subject" : "Add subject"}
+              </Button>
               {editingId && (
-                <Button variant="ghost" onClick={() => { setEditingId(null); setName(""); setDescription(""); }}>
+                <Button variant="ghost" color={colors.inkSoft} onClick={() => { setEditingId(null); setName(""); setDescription(""); }}>
                   Cancel
                 </Button>
               )}
@@ -75,22 +81,24 @@ export default function Subjects() {
         </form>
 
         <Stack gap={3}>
-          {subjects.length === 0 && <Text color="gray.500">No subjects yet — add one above.</Text>}
+          {subjects.length === 0 && <Text color={colors.inkSoft}>No subjects yet — add one above.</Text>}
           {subjects.map((subject) => (
-            <HStack key={subject._id} p={4} borderWidth={1} borderRadius="md" justify="space-between">
-              <Box>
-                <Text fontWeight="bold">{subject.name}</Text>
-                {subject.description && <Text fontSize="sm" color="gray.500">{subject.description}</Text>}
-              </Box>
-              <HStack>
-                <IconButton aria-label="Edit" size="sm" variant="ghost" onClick={() => handleEdit(subject)}>
-                  <LuPencil />
-                </IconButton>
-                <IconButton aria-label="Delete" size="sm" variant="ghost" colorPalette="red" onClick={() => handleDelete(subject._id)}>
-                  <LuTrash2 />
-                </IconButton>
+            <IndexCard key={subject._id} tabColor={colors.ink}>
+              <HStack justify="space-between">
+                <Box>
+                  <Text fontWeight="600" color={colors.ink}>{subject.name}</Text>
+                  {subject.description && <Text fontSize="sm" color={colors.inkSoft}>{subject.description}</Text>}
+                </Box>
+                <HStack>
+                  <IconButton aria-label="Edit" size="sm" variant="ghost" color={colors.inkSoft} onClick={() => handleEdit(subject)}>
+                    <LuPencil />
+                  </IconButton>
+                  <IconButton aria-label="Delete" size="sm" variant="ghost" color={colors.clay} onClick={() => handleDelete(subject._id)}>
+                    <LuTrash2 />
+                  </IconButton>
+                </HStack>
               </HStack>
-            </HStack>
+            </IndexCard>
           ))}
         </Stack>
       </Box>

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { Box, SimpleGrid, Stat, Heading, Text, VStack, HStack, Badge } from "@chakra-ui/react";
+import { Box, SimpleGrid, Heading, Text, Stack, HStack, Badge } from "@chakra-ui/react";
 import Navbar from "@/components/Navbar";
+import IndexCard from "@/components/IndexCard";
 import { api } from "@/api";
+import { colors, priorityColor } from "@/theme";
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
@@ -12,42 +14,46 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <Box>
+    <Box bg={colors.paper} minH="100vh">
       <Navbar />
-      <Box p={8}>
-        <Heading mb={6}>Dashboard</Heading>
+      <Box p={{ base: 5, md: 8 }} maxW="900px" mx="auto">
+        <Heading className="font-display" mb={7} color={colors.ink}>Dashboard</Heading>
 
-        {error && <Text color="red.500">{error}</Text>}
+        {error && <Text color={colors.clay}>{error}</Text>}
 
         {stats && (
           <>
-            <SimpleGrid columns={{ base: 2, md: 4 }} gap={5} mb={10}>
-              <StatCard label="Subjects" value={stats.subjectCount} />
-              <StatCard label="Total Tasks" value={stats.totalTasks} />
-              <StatCard label="Completed" value={stats.completedTasks} />
-              <StatCard label="Completion Rate" value={`${stats.completionRate}%`} />
+            <SimpleGrid columns={{ base: 2, md: 4 }} gap={4} mb={12}>
+              <StatCard tab={colors.ink} label="Subjects" value={stats.subjectCount} />
+              <StatCard tab={colors.inkSoft} label="Total Tasks" value={stats.totalTasks} />
+              <StatCard tab={colors.forest} label="Completed" value={stats.completedTasks} />
+              <StatCard tab={colors.highlighter} label="Completion" value={`${stats.completionRate}%`} />
             </SimpleGrid>
 
-            <Heading size="md" mb={4}>Upcoming Deadlines</Heading>
-            <VStack align="stretch" gap={3}>
+            <Text className="font-mono" fontSize="xs" letterSpacing="0.08em" textTransform="uppercase" color={colors.inkSoft} mb={3}>
+              Upcoming deadlines
+            </Text>
+            <Stack gap={3}>
               {stats.upcomingDeadlines.length === 0 && (
-                <Text color="gray.500">No upcoming deadlines. Add a task with a deadline to see it here.</Text>
+                <Text color={colors.inkSoft}>Nothing due yet — add a task with a deadline to see it here.</Text>
               )}
               {stats.upcomingDeadlines.map((task) => (
-                <HStack key={task._id} p={4} borderWidth={1} borderRadius="md" justify="space-between">
-                  <Box>
-                    <Text fontWeight="bold">{task.title}</Text>
-                    <Text fontSize="sm" color="gray.500">{task.subjectId?.name}</Text>
-                  </Box>
-                  <VStack align="end" gap={1}>
-                    <Badge colorPalette={task.priority === "high" ? "red" : task.priority === "medium" ? "orange" : "gray"}>
-                      {task.priority}
-                    </Badge>
-                    <Text fontSize="sm">{new Date(task.deadline).toLocaleDateString()}</Text>
-                  </VStack>
-                </HStack>
+                <IndexCard key={task._id} tabColor={priorityColor[task.priority]}>
+                  <HStack justify="space-between">
+                    <Box>
+                      <Text fontWeight="600" color={colors.ink}>{task.title}</Text>
+                      <Text fontSize="sm" color={colors.inkSoft}>{task.subjectId?.name}</Text>
+                    </Box>
+                    <Stack align="end" gap={1}>
+                      <Badge className="font-mono" bg={priorityColor[task.priority]} color="white" fontSize="2xs">
+                        {task.priority}
+                      </Badge>
+                      <Text fontSize="sm" color={colors.inkSoft}>{new Date(task.deadline).toLocaleDateString()}</Text>
+                    </Stack>
+                  </HStack>
+                </IndexCard>
               ))}
-            </VStack>
+            </Stack>
           </>
         )}
       </Box>
@@ -55,13 +61,15 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ label, value }) {
+function StatCard({ tab, label, value }) {
   return (
-    <Box borderWidth={1} borderRadius="lg" p={5} textAlign="center">
-      <Stat.Root>
-        <Stat.Label>{label}</Stat.Label>
-        <Stat.ValueText fontSize="2xl">{value}</Stat.ValueText>
-      </Stat.Root>
-    </Box>
+    <IndexCard tabColor={tab} textAlign="left">
+      <Text className="font-mono" fontSize="2xs" letterSpacing="0.06em" textTransform="uppercase" color={colors.inkSoft} mb={1}>
+        {label}
+      </Text>
+      <Text className="font-display" fontSize="2xl" fontWeight="700" color={colors.ink}>
+        {value}
+      </Text>
+    </IndexCard>
   );
 }

@@ -1,9 +1,18 @@
-import { Box, Flex, Heading, Button, HStack } from "@chakra-ui/react";
-import { Link, useNavigate } from "react-router";
+import { Box, Flex, Text, Button, HStack } from "@chakra-ui/react";
+import { Link, useNavigate, useLocation } from "react-router";
 import { clearSession } from "@/api";
+import { colors } from "@/theme";
+
+const navItems = [
+  { label: "Dashboard", to: "/dashboard" },
+  { label: "Subjects", to: "/subjects" },
+  { label: "Tasks", to: "/tasks" },
+  { label: "Schedule", to: "/schedule" },
+];
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const fullName = localStorage.getItem("fullName");
 
   const handleLogout = () => {
@@ -12,22 +21,48 @@ export default function Navbar() {
   };
 
   return (
-    <Box bg="teal.600" px={6} py={3}>
-      <Flex justify="space-between" align="center">
-        <Heading size="md" color="white">
+    <Box bg={colors.ink} px={{ base: 4, md: 8 }} py={4}>
+      <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
+        <Text className="font-display" fontSize="xl" fontWeight="600" color={colors.paper} letterSpacing="0.01em">
           <Link to="/dashboard">Study Planner</Link>
-        </Heading>
-        <HStack gap={5} color="white">
-          <Link to="/dashboard">Dashboard</Link>
-          <Link to="/subjects">Subjects</Link>
-          <Link to="/tasks">Tasks</Link>
-          <Link to="/schedule">Schedule</Link>
-          <HStack gap={3}>
-            <Box fontSize="sm">Hi, {fullName}</Box>
-            <Button size="sm" onClick={handleLogout} colorPalette="red" variant="solid">
-              Logout
-            </Button>
-          </HStack>
+        </Text>
+
+        <HStack gap={{ base: 4, md: 7 }} wrap="wrap">
+          {navItems.map((item) => {
+            const active = location.pathname === item.to;
+            return (
+              <Text
+                key={item.to}
+                className="font-mono"
+                fontSize="xs"
+                letterSpacing="0.06em"
+                textTransform="uppercase"
+                color={active ? colors.highlighter : "rgba(251,248,242,0.7)"}
+                borderBottomWidth="2px"
+                borderBottomColor={active ? colors.highlighter : "transparent"}
+                pb={1}
+                _hover={{ color: colors.highlighter }}
+                transition="color 0.15s ease"
+              >
+                <Link to={item.to}>{item.label}</Link>
+              </Text>
+            );
+          })}
+        </HStack>
+
+        <HStack gap={4}>
+          <Text fontSize="sm" color="rgba(251,248,242,0.8)">{fullName}</Text>
+          <Button
+            size="sm"
+            onClick={handleLogout}
+            bg="transparent"
+            color={colors.paper}
+            borderWidth="1px"
+            borderColor="rgba(251,248,242,0.35)"
+            _hover={{ bg: "rgba(251,248,242,0.1)" }}
+          >
+            Log out
+          </Button>
         </HStack>
       </Flex>
     </Box>

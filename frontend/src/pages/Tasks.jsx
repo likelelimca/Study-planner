@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { Box, Heading, Input, Button, Stack, HStack, Text, IconButton, NativeSelect, Checkbox, Badge } from "@chakra-ui/react";
 import { LuTrash2 } from "react-icons/lu";
 import Navbar from "@/components/Navbar";
+import IndexCard from "@/components/IndexCard";
 import { api } from "@/api";
+import { colors, priorityColor } from "@/theme";
 
 export default function Tasks() {
   const [tasks, setTasks] = useState([]);
@@ -59,17 +61,19 @@ export default function Tasks() {
   };
 
   return (
-    <Box>
+    <Box bg={colors.paper} minH="100vh">
       <Navbar />
-      <Box p={8} maxW="700px" mx="auto">
-        <Heading mb={6}>Tasks</Heading>
+      <Box p={{ base: 5, md: 8 }} maxW="700px" mx="auto">
+        <Heading className="font-display" mb={7} color={colors.ink}>Tasks</Heading>
 
         <form onSubmit={handleSubmit}>
-          <Stack gap={3} mb={8} p={5} borderWidth={1} borderRadius="lg">
-            <Input placeholder="Task title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+          <Stack gap={3} mb={10} p={5} bg="white" borderWidth="1px" borderColor={colors.line} borderRadius="4px">
+            <Input placeholder="Task title" value={title} onChange={(e) => setTitle(e.target.value)} required
+              borderColor={colors.line} borderRadius="4px" />
 
             <NativeSelect.Root>
-              <NativeSelect.Field value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
+              <NativeSelect.Field value={subjectId} onChange={(e) => setSubjectId(e.target.value)}
+                borderColor={colors.line} borderRadius="4px">
                 <option value="">Select a subject</option>
                 {subjects.map((s) => (
                   <option key={s._id} value={s._id}>{s.name}</option>
@@ -78,10 +82,12 @@ export default function Tasks() {
               <NativeSelect.Indicator />
             </NativeSelect.Root>
 
-            <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+            <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)}
+              borderColor={colors.line} borderRadius="4px" />
 
             <NativeSelect.Root>
-              <NativeSelect.Field value={priority} onChange={(e) => setPriority(e.target.value)}>
+              <NativeSelect.Field value={priority} onChange={(e) => setPriority(e.target.value)}
+                borderColor={colors.line} borderRadius="4px">
                 <option value="low">Low priority</option>
                 <option value="medium">Medium priority</option>
                 <option value="high">High priority</option>
@@ -89,37 +95,43 @@ export default function Tasks() {
               <NativeSelect.Indicator />
             </NativeSelect.Root>
 
-            {error && <Text color="red.500" fontSize="sm">{error}</Text>}
-            <Button type="submit" colorPalette="teal">Add Task</Button>
+            {error && <Text color={colors.clay} fontSize="sm">{error}</Text>}
+            <Button type="submit" bg={colors.ink} color={colors.paper} _hover={{ bg: "#233863" }} borderRadius="4px">
+              Add task
+            </Button>
           </Stack>
         </form>
 
         <Stack gap={3}>
-          {tasks.length === 0 && <Text color="gray.500">No tasks yet — add one above.</Text>}
+          {tasks.length === 0 && <Text color={colors.inkSoft}>No tasks yet — add one above.</Text>}
           {tasks.map((task) => (
-            <HStack key={task._id} p={4} borderWidth={1} borderRadius="md" justify="space-between">
-              <HStack>
-                <Checkbox.Root checked={task.completed} onCheckedChange={() => toggleComplete(task)}>
-                  <Checkbox.Control />
-                </Checkbox.Root>
-                <Box>
-                  <Text textDecoration={task.completed ? "line-through" : "none"} color={task.completed ? "gray.400" : "inherit"}>
-                    {task.title}
-                  </Text>
-                  <Text fontSize="sm" color="gray.500">
-                    {task.subjectId?.name}{task.deadline && ` · Due ${new Date(task.deadline).toLocaleDateString()}`}
-                  </Text>
-                </Box>
+            <IndexCard key={task._id} tabColor={priorityColor[task.priority]}>
+              <HStack justify="space-between">
+                <HStack>
+                  <Checkbox.Root checked={task.completed} onCheckedChange={() => toggleComplete(task)}>
+                    <Checkbox.HiddenInput />
+                    <Checkbox.Control borderColor={colors.line} />
+                    <Checkbox.Indicator />
+                  </Checkbox.Root>
+                  <Box>
+                    <Text textDecoration={task.completed ? "line-through" : "none"} color={task.completed ? colors.inkSoft : colors.ink} fontWeight="600">
+                      {task.title}
+                    </Text>
+                    <Text fontSize="sm" color={colors.inkSoft}>
+                      {task.subjectId?.name}{task.deadline && ` · Due ${new Date(task.deadline).toLocaleDateString()}`}
+                    </Text>
+                  </Box>
+                </HStack>
+                <HStack>
+                  <Badge className="font-mono" bg={priorityColor[task.priority]} color="white" fontSize="2xs">
+                    {task.priority}
+                  </Badge>
+                  <IconButton aria-label="Delete" size="sm" variant="ghost" color={colors.clay} onClick={() => handleDelete(task._id)}>
+                    <LuTrash2 />
+                  </IconButton>
+                </HStack>
               </HStack>
-              <HStack>
-                <Badge colorPalette={task.priority === "high" ? "red" : task.priority === "medium" ? "orange" : "gray"}>
-                  {task.priority}
-                </Badge>
-                <IconButton aria-label="Delete" size="sm" variant="ghost" colorPalette="red" onClick={() => handleDelete(task._id)}>
-                  <LuTrash2 />
-                </IconButton>
-              </HStack>
-            </HStack>
+            </IndexCard>
           ))}
         </Stack>
       </Box>
