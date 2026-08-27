@@ -1,24 +1,45 @@
-import { useState } from "react";
-import { Box, Button, Input, Stack, Heading, Text, Link as ChakraLink } from "@chakra-ui/react";
+import { useState, useMemo } from "react";
+import { Box, Button, Input, Stack, Heading, Text, Link as ChakraLink, HStack } from "@chakra-ui/react";
 import { Link, useNavigate } from "react-router";
 import { api } from "@/api";
 import { colors } from "@/theme";
+
+const requirements = [
+  { label: "At least 8 characters", test: (pw) => pw.length >= 8 },
+  { label: "A lowercase letter", test: (pw) => /[a-z]/.test(pw) },
+  { label: "An uppercase letter", test: (pw) => /[A-Z]/.test(pw) },
+  { label: "A number", test: (pw) => /[0-9]/.test(pw) },
+];
 
 export default function Register() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordTouched, setPasswordTouched] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const passwordChecks = useMemo(
+    () => requirements.map((req) => ({ ...req, met: req.test(password) })),
+    [password]
+  );
+  const passwordValid = passwordChecks.every((c) => c.met);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (!passwordValid) {
+      setPasswordTouched(true);
+      setError("Password doesn't meet all the requirements below.");
+      return;
+    }
+
     setLoading(true);
     try {
-      await api.register({ fullName, email, password });
-      navigate("/verify-otp", { state: { email } });
+      const data = await api.register({ fullName, email, password });
+      navigate("/verify-otp", { state: { email, otpExpiresInSeconds: data.otpExpiresInSeconds } });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -38,8 +59,36 @@ export default function Register() {
               required borderColor={colors.line} borderRadius="4px" />
             <Input placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
               required borderColor={colors.line} borderRadius="4px" />
-            <Input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-              required borderColor={colors.line} borderRadius="4px" />
+            <Input
+              placeholder="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onFocus={() => setPasswordTouched(true)}
+              required
+              borderColor={colors.line}
+              borderRadius="4px"
+            />
+
+            {passwordTouched && (
+              <Stack gap={1} pl={1}>
+                {passwordChecks.map((check) => (
+                  <HStack key={check.label} gap={2}>
+                    <Text
+                      className="font-mono"
+                      fontSize="xs"
+                      color={check.met ? colors.forest : colors.inkSoft}
+                    >
+                      {check.met ? "✓" : "○"}
+                    </Text>
+                    <Text fontSize="xs" color={check.met ? colors.forest : colors.inkSoft}>
+                      {check.label}
+                    </Text>
+                  </HStack>
+                ))}
+              </Stack>
+            )}
+
             {error && <Text color={colors.clay} fontSize="sm">{error}</Text>}
             <Button type="submit" bg={colors.ink} color={colors.paper} _hover={{ bg: "#233863" }}
               borderRadius="4px" loading={loading}>Register</Button>

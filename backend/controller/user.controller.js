@@ -8,11 +8,24 @@ function generateOtp() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+function getPasswordIssue(password) {
+    if (password.length < 8) return "Password must be at least 8 characters";
+    if (!/[a-z]/.test(password)) return "Password must include a lowercase letter";
+    if (!/[A-Z]/.test(password)) return "Password must include an uppercase letter";
+    if (!/[0-9]/.test(password)) return "Password must include a number";
+    return null;
+}
+
 const registration = async (req, res) => {
     const { fullName, email, password } = req.body;
 
     if (!fullName || !email || !password) {
         return res.status(400).send({ message: "All fields are required" });
+    }
+
+    const passwordIssue = getPasswordIssue(password);
+    if (passwordIssue) {
+        return res.status(400).send({ message: passwordIssue });
     }
 
     try {
@@ -44,7 +57,7 @@ const registration = async (req, res) => {
                     return res.status(500).send({ message: "Account created, but the verification email could not be sent. Try resending the code.", error: mailError.message });
                 }
 
-                res.status(200).send({ message: "Registration successful. Check your email for a verification code.", email });
+                res.status(200).send({ message: "Registration successful. Check your email for a verification code.", email, otpExpiresInSeconds: 600 });
             }
         });
     } catch (error) {
@@ -120,7 +133,7 @@ const resendOtp = async (req, res) => {
             return res.status(500).send({ message: "Could not send the email. Try again in a moment.", error: mailError.message });
         }
 
-        res.status(200).send({ message: "A new code has been sent to your email." });
+        res.status(200).send({ message: "A new code has been sent to your email.", otpExpiresInSeconds: 600 });
     } catch (error) {
         res.status(500).send({ message: "Internal Server Error", error: error.message });
     }
