@@ -4,13 +4,13 @@ import Navbar from "@/components/Navbar";
 import IndexCard from "@/components/IndexCard";
 import { api } from "@/api";
 import { colors, priorityColor } from "@/theme";
+import { notifyError } from "@/utils/notify";
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
-  const [error, setError] = useState("");
 
   useEffect(() => {
-    api.getDashboard().then(setStats).catch((err) => setError(err.message));
+    api.getDashboard().then(setStats).catch((err) => notifyError(err.message));
   }, []);
 
   return (
@@ -18,8 +18,6 @@ export default function Dashboard() {
       <Navbar />
       <Box p={{ base: 5, md: 8 }} maxW="900px" mx="auto">
         <Heading className="font-display" mb={7} color={colors.ink}>Dashboard</Heading>
-
-        {error && <Text color={colors.clay}>{error}</Text>}
 
         {stats && (
           <>

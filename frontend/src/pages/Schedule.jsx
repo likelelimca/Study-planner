@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import IndexCard from "@/components/IndexCard";
 import { api } from "@/api";
 import { colors } from "@/theme";
+import { notifyError, notifySuccess } from "@/utils/notify";
 
 export default function Schedule() {
   const [schedules, setSchedules] = useState([]);
@@ -14,11 +15,10 @@ export default function Schedule() {
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [notes, setNotes] = useState("");
-  const [error, setError] = useState("");
 
   const loadData = () => {
-    api.getSchedules().then(setSchedules).catch((err) => setError(err.message));
-    api.getSubjects().then(setSubjects).catch((err) => setError(err.message));
+    api.getSchedules().then(setSchedules).catch((err) => notifyError(err.message));
+    api.getSubjects().then(setSubjects).catch((err) => notifyError(err.message));
   };
 
   useEffect(() => {
@@ -27,29 +27,30 @@ export default function Schedule() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     if (!subjectId) {
-      setError("Add a subject first, then pick it here.");
+      notifyError("Add a subject first, then pick it here.");
       return;
     }
     try {
       await api.createSchedule({ subjectId, date, startTime, endTime, notes });
+      notifySuccess("Study session added");
       setDate("");
       setStartTime("");
       setEndTime("");
       setNotes("");
       loadData();
     } catch (err) {
-      setError(err.message);
+      notifyError(err.message);
     }
   };
 
   const handleDelete = async (id) => {
     try {
       await api.deleteSchedule(id);
+      notifySuccess("Session deleted");
       loadData();
     } catch (err) {
-      setError(err.message);
+      notifyError(err.message);
     }
   };
 
@@ -88,7 +89,6 @@ export default function Schedule() {
             <Textarea placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)}
               borderColor={colors.line} borderRadius="4px" />
 
-            {error && <Text color={colors.clay} fontSize="sm">{error}</Text>}
             <Button type="submit" bg={colors.ink} color={colors.paper} _hover={{ bg: "#233863" }} borderRadius="4px">
               Add session
             </Button>

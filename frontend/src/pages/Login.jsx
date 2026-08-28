@@ -1,22 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Box, Button, Input, Stack, Heading, Text, Link as ChakraLink, HStack } from "@chakra-ui/react";
 import { Link, useNavigate, useLocation } from "react-router";
 import { api, saveSession } from "@/api";
 import { colors } from "@/theme";
+import { notifyError, notifySuccess } from "@/utils/notify";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const justVerified = location.state?.justVerified;
-  const justReset = location.state?.justReset;
+
+  useEffect(() => {
+    if (location.state?.justVerified) {
+      notifySuccess("Your email is verified — you can log in now.");
+    }
+    if (location.state?.justReset) {
+      notifySuccess("Password reset — log in with your new password.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
     try {
       const data = await api.login({ email, password });
@@ -27,7 +34,7 @@ export default function Login() {
         navigate("/verify-otp", { state: { email: err.data.email } });
         return;
       }
-      setError(err.message);
+      notifyError(err.message);
     } finally {
       setLoading(false);
     }
@@ -39,19 +46,12 @@ export default function Login() {
         boxShadow="0 6px 20px rgba(27,42,74,0.06)">
         <Heading className="font-display" mb={1} fontSize="2xl" color={colors.ink}>Welcome back</Heading>
         <Text fontSize="sm" color={colors.inkSoft} mb={6}>Log in to your study desk.</Text>
-        {justVerified && (
-          <Text fontSize="sm" color={colors.forest} mb={4}>Your email is verified — you can log in now.</Text>
-        )}
-        {justReset && (
-          <Text fontSize="sm" color={colors.forest} mb={4}>Password reset — log in with your new password.</Text>
-        )}
         <form onSubmit={handleSubmit}>
           <Stack gap={4}>
             <Input placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
               required borderColor={colors.line} borderRadius="4px" />
             <Input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)}
               required borderColor={colors.line} borderRadius="4px" />
-            {error && <Text color={colors.clay} fontSize="sm">{error}</Text>}
             <Button type="submit" bg={colors.ink} color={colors.paper} _hover={{ bg: "#233863" }}
               borderRadius="4px" loading={loading}>Log in</Button>
           </Stack>

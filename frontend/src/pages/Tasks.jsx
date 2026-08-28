@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import IndexCard from "@/components/IndexCard";
 import { api } from "@/api";
 import { colors, priorityColor } from "@/theme";
+import { notifyError, notifySuccess } from "@/utils/notify";
 
 export default function Tasks() {
   const [tasks, setTasks] = useState([]);
@@ -13,11 +14,10 @@ export default function Tasks() {
   const [subjectId, setSubjectId] = useState("");
   const [deadline, setDeadline] = useState("");
   const [priority, setPriority] = useState("medium");
-  const [error, setError] = useState("");
 
   const loadData = () => {
-    api.getTasks().then(setTasks).catch((err) => setError(err.message));
-    api.getSubjects().then(setSubjects).catch((err) => setError(err.message));
+    api.getTasks().then(setTasks).catch((err) => notifyError(err.message));
+    api.getSubjects().then(setSubjects).catch((err) => notifyError(err.message));
   };
 
   useEffect(() => {
@@ -26,19 +26,19 @@ export default function Tasks() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     if (!subjectId) {
-      setError("Add a subject first, then pick it here.");
+      notifyError("Add a subject first, then pick it here.");
       return;
     }
     try {
       await api.createTask({ title, subjectId, deadline: deadline || undefined, priority });
+      notifySuccess("Task added");
       setTitle("");
       setDeadline("");
       setPriority("medium");
       loadData();
     } catch (err) {
-      setError(err.message);
+      notifyError(err.message);
     }
   };
 
@@ -47,16 +47,17 @@ export default function Tasks() {
       await api.updateTask(task._id, { completed: !task.completed });
       loadData();
     } catch (err) {
-      setError(err.message);
+      notifyError(err.message);
     }
   };
 
   const handleDelete = async (id) => {
     try {
       await api.deleteTask(id);
+      notifySuccess("Task deleted");
       loadData();
     } catch (err) {
-      setError(err.message);
+      notifyError(err.message);
     }
   };
 
@@ -95,7 +96,6 @@ export default function Tasks() {
               <NativeSelect.Indicator />
             </NativeSelect.Root>
 
-            {error && <Text color={colors.clay} fontSize="sm">{error}</Text>}
             <Button type="submit" bg={colors.ink} color={colors.paper} _hover={{ bg: "#233863" }} borderRadius="4px">
               Add task
             </Button>

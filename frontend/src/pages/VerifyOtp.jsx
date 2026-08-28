@@ -3,8 +3,9 @@ import { Box, Button, Input, Stack, Heading, Text } from "@chakra-ui/react";
 import { useLocation, useNavigate, Navigate } from "react-router";
 import { api } from "@/api";
 import { colors } from "@/theme";
+import { notifyError, notifySuccess } from "@/utils/notify";
 
-const DEFAULT_EXPIRY_SECONDS = 600; // matches backend's 10-minute OTP window
+const DEFAULT_EXPIRY_SECONDS = 600;
 
 export default function VerifyOtp() {
   const location = useLocation();
@@ -12,8 +13,6 @@ export default function VerifyOtp() {
   const email = location.state?.email;
 
   const [otp, setOtp] = useState("");
-  const [error, setError] = useState("");
-  const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(
@@ -28,8 +27,6 @@ export default function VerifyOtp() {
     return () => clearInterval(intervalRef.current);
   }, []);
 
-  // If someone lands here directly without registering first, there's no
-  // email to verify against — send them back to register instead.
   if (!email) {
     return <Navigate to="/register" replace />;
   }
@@ -40,31 +37,27 @@ export default function VerifyOtp() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setInfo("");
     setLoading(true);
     try {
       await api.verifyOtp({ email, otp });
       navigate("/login", { state: { justVerified: true } });
     } catch (err) {
-      setError(err.message);
-      setOtp(""); // clear the wrong code so the student can retype cleanly
+      notifyError(err.message);
+      setOtp("");
     } finally {
       setLoading(false);
     }
   };
 
   const handleResend = async () => {
-    setError("");
-    setInfo("");
     setOtp("");
     setResending(true);
     try {
       const data = await api.resendOtp({ email });
-      setInfo(data.message);
+      notifySuccess(data.message);
       setSecondsLeft(data.otpExpiresInSeconds ?? DEFAULT_EXPIRY_SECONDS);
     } catch (err) {
-      setError(err.message);
+      notifyError(err.message);
     } finally {
       setResending(false);
     }
@@ -79,12 +72,7 @@ export default function VerifyOtp() {
           We sent a 6-digit code to <Text as="span" fontWeight="600" color={colors.ink}>{email}</Text>.
         </Text>
 
-        <Text
-          className="font-mono"
-          fontSize="sm"
-          color={expired ? colors.clay : colors.inkSoft}
-          mb={6}
-        >
+        <Text className="font-mono" fontSize="sm" color={expired ? colors.clay : colors.inkSoft} mb={6}>
           {expired ? "Code expired" : `Expires in ${minutes}:${seconds}`}
         </Text>
 
@@ -104,8 +92,6 @@ export default function VerifyOtp() {
               borderColor={colors.line}
               borderRadius="4px"
             />
-            {error && <Text color={colors.clay} fontSize="sm">{error}</Text>}
-            {info && <Text color={colors.forest} fontSize="sm">{info}</Text>}
             <Button
               type="submit"
               bg={colors.ink}

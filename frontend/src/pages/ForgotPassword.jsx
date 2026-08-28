@@ -3,22 +3,21 @@ import { Box, Button, Input, Stack, Heading, Text, Link as ChakraLink } from "@c
 import { Link, useNavigate } from "react-router";
 import { api } from "@/api";
 import { colors } from "@/theme";
+import { notifyError } from "@/utils/notify";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
     try {
       const data = await api.forgotPassword({ email });
       navigate("/reset-password", { state: { email, otpExpiresInSeconds: data.otpExpiresInSeconds } });
     } catch (err) {
-      setError(err.message);
+      notifyError(err.message);
     } finally {
       setLoading(false);
     }
@@ -36,7 +35,6 @@ export default function ForgotPassword() {
           <Stack gap={4}>
             <Input placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
               required borderColor={colors.line} borderRadius="4px" />
-            {error && <Text color={colors.clay} fontSize="sm">{error}</Text>}
             <Button type="submit" bg={colors.ink} color={colors.paper} _hover={{ bg: "#233863" }}
               borderRadius="4px" loading={loading}>Send reset code</Button>
           </Stack>

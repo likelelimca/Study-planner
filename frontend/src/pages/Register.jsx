@@ -5,13 +5,13 @@ import { api } from "@/api";
 import { colors } from "@/theme";
 import { passwordRequirements } from "@/utils/passwordRequirements";
 import PasswordChecklist from "@/components/PasswordChecklist";
+import { notifyError } from "@/utils/notify";
 
 export default function Register() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordTouched, setPasswordTouched] = useState(false);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -23,11 +23,10 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
 
     if (!passwordValid) {
       setPasswordTouched(true);
-      setError("Password doesn't meet all the requirements below.");
+      notifyError("Password doesn't meet all the requirements below.");
       return;
     }
 
@@ -36,7 +35,7 @@ export default function Register() {
       const data = await api.register({ fullName, email, password });
       navigate("/verify-otp", { state: { email, otpExpiresInSeconds: data.otpExpiresInSeconds } });
     } catch (err) {
-      setError(err.message);
+      notifyError(err.message);
     } finally {
       setLoading(false);
     }
@@ -67,7 +66,6 @@ export default function Register() {
 
             {passwordTouched && <PasswordChecklist checks={passwordChecks} />}
 
-            {error && <Text color={colors.clay} fontSize="sm">{error}</Text>}
             <Button type="submit" bg={colors.ink} color={colors.paper} _hover={{ bg: "#233863" }}
               borderRadius="4px" loading={loading}>Register</Button>
           </Stack>

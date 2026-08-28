@@ -5,6 +5,7 @@ import { api } from "@/api";
 import { colors } from "@/theme";
 import { passwordRequirements } from "@/utils/passwordRequirements";
 import PasswordChecklist from "@/components/PasswordChecklist";
+import { notifyError, notifySuccess } from "@/utils/notify";
 
 const DEFAULT_EXPIRY_SECONDS = 600;
 
@@ -16,8 +17,6 @@ export default function ResetPassword() {
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [passwordTouched, setPasswordTouched] = useState(false);
-  const [error, setError] = useState("");
-  const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(
@@ -48,12 +47,10 @@ export default function ResetPassword() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setInfo("");
 
     if (!passwordValid) {
       setPasswordTouched(true);
-      setError("New password doesn't meet all the requirements below.");
+      notifyError("New password doesn't meet all the requirements below.");
       return;
     }
 
@@ -62,7 +59,7 @@ export default function ResetPassword() {
       await api.resetPassword({ email, otp, newPassword });
       navigate("/login", { state: { justReset: true } });
     } catch (err) {
-      setError(err.message);
+      notifyError(err.message);
       setOtp("");
     } finally {
       setLoading(false);
@@ -70,16 +67,14 @@ export default function ResetPassword() {
   };
 
   const handleResend = async () => {
-    setError("");
-    setInfo("");
     setOtp("");
     setResending(true);
     try {
       const data = await api.forgotPassword({ email });
-      setInfo(data.message);
+      notifySuccess(data.message);
       setSecondsLeft(data.otpExpiresInSeconds ?? DEFAULT_EXPIRY_SECONDS);
     } catch (err) {
-      setError(err.message);
+      notifyError(err.message);
     } finally {
       setResending(false);
     }
@@ -128,8 +123,6 @@ export default function ResetPassword() {
 
             {passwordTouched && <PasswordChecklist checks={passwordChecks} />}
 
-            {error && <Text color={colors.clay} fontSize="sm">{error}</Text>}
-            {info && <Text color={colors.forest} fontSize="sm">{info}</Text>}
             <Button type="submit" bg={colors.ink} color={colors.paper} _hover={{ bg: "#233863" }}
               borderRadius="4px" loading={loading} disabled={expired}>
               Reset password
