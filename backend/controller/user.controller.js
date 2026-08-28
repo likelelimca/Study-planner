@@ -1,7 +1,7 @@
 const { userModel } = require("../model/user.model");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { sendOtpEmail } = require("../config/mailer");
+const { sendOtpEmail, sendPasswordResetEmail } = require("../config/mailer");
 require('dotenv').config();
 
 function generateOtp() {
@@ -139,6 +139,85 @@ const resendOtp = async (req, res) => {
     }
 }
 
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).send({ message: "Email is required" });
+    }
+
+    try {
+        const user = await userModel.findOne({ email });
+
+        // Don't reveal whether an account exists for this email — same
+        // response either way, so this endpoint can't be used to check
+        // who is or isn't a registered user.
+        if (!user) {
+            return res.status(200).send({ message: "If an account exists for this email, a reset code has been sent.", otpExpiresInSeconds: 600 });
+        }
+
+        const otp = generateOtp();
+        user.resetOtp = otp;
+        user.resetOtpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+        await user.save();
+
+        try {
+            await sendPasswordResetEmail(email, user.fullName, otp);
+        } catch (mailError) {
+            return res.status(500).send({ message: "Could not send the reset email. Try again in a moment.", error: mailError.message });
+        }
+
+        res.status(200).send({ message: "If an account exists for this email, a reset code has been sent.", otpExpiresInSeconds: 600 });
+    } catch (error) {
+        res.status(500).send({ message: "Internal Server Error", error: error.message });
+    }
+}
+
+const resetPassword = async (req, res) => {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+        return res.status(400).send({ message: "Email, code, and new password are required" });
+    }
+
+    const passwordIssue = getPasswordIssue(newPassword);
+    if (passwordIssue) {
+        return res.status(400).send({ message: passwordIssue });
+    }
+
+    try {
+        const user = await userModel.findOne({ email });
+        if (!user) {
+            return res.status(400).send({ message: "Invalid or expired code" });
+        }
+
+        if (!user.resetOtp || !user.resetOtpExpiry) {
+            return res.status(400).send({ message: "No reset code on file. Request a new one." });
+        }
+
+        if (user.resetOtpExpiry < new Date()) {
+            return res.status(400).send({ message: "This code has expired. Request a new one." });
+        }
+
+        if (user.resetOtp !== otp) {
+            return res.status(400).send({ message: "Incorrect code" });
+        }
+
+        bcrypt.hash(newPassword, 5, async function (err, hash) {
+            if (err) {
+                return res.status(500).send({ message: "There was an error resetting your password" });
+            }
+            user.password = hash;
+            user.resetOtp = undefined;
+            user.resetOtpExpiry = undefined;
+            await user.save();
+            res.status(200).send({ message: "Password reset. You can now log in with your new password." });
+        });
+    } catch (error) {
+        res.status(500).send({ message: "Internal Server Error", error: error.message });
+    }
+}
+
 const userLogin = async (req, res) => {
     const { email, password } = req.body;
 
@@ -185,6 +264,8 @@ module.exports = {
     registration,
     verifyOtp,
     resendOtp,
+    forgotPassword,
+    resetPassword,
     userLogin,
     getProfile
 }

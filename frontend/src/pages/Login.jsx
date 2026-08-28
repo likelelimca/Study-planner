@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Button, Input, Stack, Heading, Text, Link as ChakraLink } from "@chakra-ui/react";
+import { Box, Button, Input, Stack, Heading, Text, Link as ChakraLink, HStack } from "@chakra-ui/react";
 import { Link, useNavigate, useLocation } from "react-router";
 import { api, saveSession } from "@/api";
 import { colors } from "@/theme";
@@ -12,6 +12,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const justVerified = location.state?.justVerified;
+  const justReset = location.state?.justReset;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,6 +42,9 @@ export default function Login() {
         {justVerified && (
           <Text fontSize="sm" color={colors.forest} mb={4}>Your email is verified — you can log in now.</Text>
         )}
+        {justReset && (
+          <Text fontSize="sm" color={colors.forest} mb={4}>Password reset — log in with your new password.</Text>
+        )}
         <form onSubmit={handleSubmit}>
           <Stack gap={4}>
             <Input placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
@@ -52,7 +56,10 @@ export default function Login() {
               borderRadius="4px" loading={loading}>Log in</Button>
           </Stack>
         </form>
-        <Text mt={5} textAlign="center" fontSize="sm" color={colors.inkSoft}>
+        <HStack mt={5} justify="center" gap={1} fontSize="sm">
+          <ChakraLink asChild color={colors.inkSoft}><Link to="/forgot-password">Forgot password?</Link></ChakraLink>
+        </HStack>
+        <Text mt={2} textAlign="center" fontSize="sm" color={colors.inkSoft}>
           No account yet? <ChakraLink asChild color={colors.ink} fontWeight="600"><Link to="/register">Register</Link></ChakraLink>
         </Text>
       </Box>

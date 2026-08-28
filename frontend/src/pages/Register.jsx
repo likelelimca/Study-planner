@@ -1,15 +1,10 @@
 import { useState, useMemo } from "react";
-import { Box, Button, Input, Stack, Heading, Text, Link as ChakraLink, HStack } from "@chakra-ui/react";
+import { Box, Button, Input, Stack, Heading, Text, Link as ChakraLink } from "@chakra-ui/react";
 import { Link, useNavigate } from "react-router";
 import { api } from "@/api";
 import { colors } from "@/theme";
-
-const requirements = [
-  { label: "At least 8 characters", test: (pw) => pw.length >= 8 },
-  { label: "A lowercase letter", test: (pw) => /[a-z]/.test(pw) },
-  { label: "An uppercase letter", test: (pw) => /[A-Z]/.test(pw) },
-  { label: "A number", test: (pw) => /[0-9]/.test(pw) },
-];
+import { passwordRequirements } from "@/utils/passwordRequirements";
+import PasswordChecklist from "@/components/PasswordChecklist";
 
 export default function Register() {
   const [fullName, setFullName] = useState("");
@@ -21,7 +16,7 @@ export default function Register() {
   const navigate = useNavigate();
 
   const passwordChecks = useMemo(
-    () => requirements.map((req) => ({ ...req, met: req.test(password) })),
+    () => passwordRequirements.map((req) => ({ ...req, met: req.test(password) })),
     [password]
   );
   const passwordValid = passwordChecks.every((c) => c.met);
@@ -70,24 +65,7 @@ export default function Register() {
               borderRadius="4px"
             />
 
-            {passwordTouched && (
-              <Stack gap={1} pl={1}>
-                {passwordChecks.map((check) => (
-                  <HStack key={check.label} gap={2}>
-                    <Text
-                      className="font-mono"
-                      fontSize="xs"
-                      color={check.met ? colors.forest : colors.inkSoft}
-                    >
-                      {check.met ? "✓" : "○"}
-                    </Text>
-                    <Text fontSize="xs" color={check.met ? colors.forest : colors.inkSoft}>
-                      {check.label}
-                    </Text>
-                  </HStack>
-                ))}
-              </Stack>
-            )}
+            {passwordTouched && <PasswordChecklist checks={passwordChecks} />}
 
             {error && <Text color={colors.clay} fontSize="sm">{error}</Text>}
             <Button type="submit" bg={colors.ink} color={colors.paper} _hover={{ bg: "#233863" }}
