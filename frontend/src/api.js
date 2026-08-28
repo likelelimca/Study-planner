@@ -1,4 +1,7 @@
-const BASE_URL = "http://localhost:5000/api";
+// Falls back to localhost for local development. When deployed, set
+// VITE_API_URL as an environment variable on your hosting platform
+// (e.g. Vercel/Netlify) pointing at your live Render backend.
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 function getToken() {
   return localStorage.getItem("token");
